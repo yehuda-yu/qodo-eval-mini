@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Qodo Mini-Eval — Testing the Agent · Yehuda Yungstein</title>
+<meta name="description" content="A controlled experiment comparing three code-review approaches on a real codebase with planted bugs and a calibration trap. Pilot study by Yehuda Yungstein.">
+<meta property="og:title" content="Qodo Mini-Eval — Testing the Agent">
+<meta property="og:description" content="Three code-review approaches, identical diff, blinded LLM judge. The differentiator was calibration, not recall.">
+<meta property="og:type" content="article">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0f;
+    --bg-2:#10101a;
+    --line:#1f1f2e;
+    --line-2:#2a2a40;
+    --fg:#ECECF1;
+    --fg-dim:#9a9aae;
+    --fg-mute:#5d5d72;
+    --accent:#7c5cff;
+    --accent-2:#a896ff;
+    --good:#5ad19a;
+    --warn:#f3c969;
+    --bad:#ff7a85;
+    --grid: 8px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);
+    font-family:"Inter",ui-sans-serif,system-ui,sans-serif;
+    font-feature-settings:"ss01","cv11";
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent-2);text-decoration:none;border-bottom:1px solid color-mix(in oklab, var(--accent-2) 35%, transparent)}
+  a:hover{color:#fff;border-bottom-color:#fff}
+  code,.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.92em}
+  .serif{font-family:"Instrument Serif",serif;font-style:italic;font-weight:400}
+
+  /* layout */
+  .wrap{max-width:1080px;margin:0 auto;padding:0 32px}
+  header.top{
+    border-bottom:1px solid var(--line);
+    padding:18px 0;
+    position:sticky;top:0;background:rgba(10,10,15,.78);backdrop-filter:blur(10px);z-index:10;
+  }
+  .top-row{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:-.01em}
+  .brand .dot{width:10px;height:10px;border-radius:2px;background:var(--accent);box-shadow:0 0 0 4px color-mix(in oklab, var(--accent) 18%, transparent)}
+  .author{
+    font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--fg-dim);
+    display:flex;align-items:center;gap:14px;letter-spacing:.02em;
+  }
+  .author .name{color:var(--fg);font-weight:500;letter-spacing:-.005em}
+  .author .sep{color:var(--fg-mute)}
+  .author a{color:var(--fg-dim);border-bottom-color:transparent}
+  .author a:hover{color:#fff}
+  .author .ghicon{width:14px;height:14px;vertical-align:-2px;margin-right:4px;fill:currentColor}
+
+  /* hero */
+  .hero{padding:88px 0 56px;border-bottom:1px solid var(--line)}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:10px;
+    font-family:"JetBrains Mono",monospace;font-size:12px;
+    color:var(--fg-dim);text-transform:uppercase;letter-spacing:.18em;
+    padding:6px 10px;border:1px solid var(--line-2);border-radius:999px;background:var(--bg-2);
+  }
+  .eyebrow .pulse{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 var(--accent);animation:pulse 1.8s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in oklab,var(--accent) 60%,transparent)}70%{box-shadow:0 0 0 10px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  h1{
+    font-size:clamp(40px,6vw,72px);
+    line-height:1.02;letter-spacing:-.025em;font-weight:600;
+    margin:24px 0 18px;
+  }
+  h1 .grad{
+    background:linear-gradient(92deg,#fff 30%,var(--accent-2) 70%,var(--accent) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .lede{max-width:720px;color:var(--fg-dim);font-size:19px;line-height:1.55}
+  .meta{
+    display:flex;flex-wrap:wrap;gap:24px;margin-top:32px;
+    font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--fg-mute);
+  }
+  .meta b{color:var(--fg);font-weight:500}
+
+  /* section */
+  section{padding:64px 0;border-bottom:1px solid var(--line)}
+  .sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:28px}
+  .sec-num{font-family:"JetBrains Mono",monospace;color:var(--accent);font-size:13px;letter-spacing:.1em}
+  h2{font-size:30px;letter-spacing:-.02em;font-weight:600;margin:0}
+  h2 .em{font-family:"Instrument Serif",serif;font-style:italic;font-weight:400;color:var(--fg-dim)}
+  h3{font-size:16px;font-weight:600;margin:0 0 10px;letter-spacing:-.005em}
+  p{color:var(--fg-dim);line-height:1.6;font-size:15.5px;max-width:72ch}
+
+  /* TL;DR / scoreboard */
+  .scoreboard{
+    display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:0;
+    border:1px solid var(--line-2);border-radius:14px;overflow:hidden;background:var(--bg-2);
+  }
+  .row{display:contents}
+  .row > *{padding:18px 22px;border-bottom:1px solid var(--line)}
+  .row:last-child > *{border-bottom:none}
+  .head-row > *{
+    background:#0d0d16;color:var(--fg-mute);font-family:"JetBrains Mono",monospace;
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  }
+  .track{display:flex;align-items:center;gap:14px;font-weight:500}
+  .track .badge{
+    width:28px;height:28px;border-radius:6px;display:grid;place-items:center;
+    font-family:"JetBrains Mono",monospace;font-size:13px;font-weight:600;
+    border:1px solid var(--line-2);background:#15151f;
+  }
+  .track.win .badge{background:linear-gradient(180deg,var(--accent),#5b3fff);color:#fff;border-color:transparent;box-shadow:0 0 0 3px color-mix(in oklab,var(--accent) 20%,transparent)}
+  .track .name{color:var(--fg)}
+  .track .sub{color:var(--fg-mute);font-family:"JetBrains Mono",monospace;font-size:12px;display:block;margin-top:2px}
+  .num{
+    font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;
+    font-size:22px;letter-spacing:-.01em;
+    display:flex;align-items:center;gap:14px;
+  }
+  .bar{flex:1;height:6px;background:#191925;border-radius:99px;overflow:hidden;position:relative}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent-2),var(--accent));border-radius:99px}
+  .row.win .num{color:#fff}
+  .row .num.is-win i{background:linear-gradient(90deg,#fff,var(--accent))}
+
+  /* findings */
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .card{
+    border:1px solid var(--line-2);border-radius:12px;padding:22px 22px 20px;background:var(--bg-2);
+    position:relative;overflow:hidden;
+  }
+  .card .tag{
+    display:inline-flex;align-items:center;gap:6px;
+    font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 8px;border-radius:6px;border:1px solid var(--line-2);color:var(--fg-dim);
+    margin-bottom:12px;
+  }
+  .card.win .tag{color:var(--accent-2);border-color:color-mix(in oklab,var(--accent) 50%,transparent);background:color-mix(in oklab,var(--accent) 10%,transparent)}
+  .card.warn .tag{color:var(--warn);border-color:color-mix(in oklab,var(--warn) 50%,transparent);background:color-mix(in oklab,var(--warn) 10%,transparent)}
+  .card.bad .tag{color:var(--bad);border-color:color-mix(in oklab,var(--bad) 50%,transparent);background:color-mix(in oklab,var(--bad) 10%,transparent)}
+  .card .stat{font-family:"JetBrains Mono",monospace;color:var(--fg-mute);font-size:12px;margin-top:12px}
+
+  /* methodology */
+  .method{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .mcard{
+    border:1px solid var(--line);border-radius:10px;padding:18px;background:#0d0d16;
+  }
+  .mcard .k{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.14em;color:var(--fg-mute);text-transform:uppercase;margin-bottom:8px}
+  .mcard .v{font-size:15px;line-height:1.45;color:var(--fg)}
+  .mcard .v b{color:var(--accent-2);font-weight:500}
+
+  /* trap diagram */
+  .trap{
+    display:grid;grid-template-columns:1fr auto 1fr 1fr;gap:0;
+    border:1px solid var(--line-2);border-radius:12px;overflow:hidden;background:var(--bg-2);
+  }
+  .trap > div{padding:18px 20px;border-right:1px solid var(--line)}
+  .trap > div:last-child{border-right:none}
+  .trap .h{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.12em;color:var(--fg-mute);text-transform:uppercase;margin-bottom:10px}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;font-family:"JetBrains Mono",monospace;font-size:12px;border:1px solid var(--line-2)}
+  .pill.ok{color:var(--good);border-color:color-mix(in oklab,var(--good) 40%,transparent);background:color-mix(in oklab,var(--good) 8%,transparent)}
+  .pill.fp{color:var(--bad);border-color:color-mix(in oklab,var(--bad) 40%,transparent);background:color-mix(in oklab,var(--bad) 8%,transparent)}
+  .pill.miss{color:var(--warn);border-color:color-mix(in oklab,var(--warn) 40%,transparent);background:color-mix(in oklab,var(--warn) 8%,transparent)}
+  .arrow{display:grid;place-items:center;color:var(--fg-mute);font-family:"JetBrains Mono",monospace}
+
+  /* future work list */
+  .roadmap{counter-reset:r;display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line-2);border-radius:12px;overflow:hidden}
+  .ritem{counter-increment:r;padding:22px 24px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);display:flex;gap:18px;background:var(--bg-2)}
+  .ritem:nth-child(2n){border-right:none}
+  .ritem:nth-last-child(-n+2){border-bottom:none}
+  .ritem::before{
+    content:"0" counter(r);
+    font-family:"JetBrains Mono",monospace;color:var(--accent);font-size:13px;
+    flex-shrink:0;padding-top:2px;
+  }
+  .ritem h3{margin-bottom:6px}
+  .ritem p{font-size:14px;margin:0;color:var(--fg-dim)}
+
+  /* chart */
+  .chart{
+    border:1px solid var(--line-2);border-radius:12px;padding:24px 28px;background:var(--bg-2);
+  }
+  .legend{display:flex;gap:18px;font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--fg-mute);margin-bottom:18px;text-transform:uppercase;letter-spacing:.12em}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+  .ch-row{display:grid;grid-template-columns:170px 1fr 60px;gap:14px;align-items:center;margin:10px 0}
+  .ch-row .lbl{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--fg-dim)}
+  .ch-row .lbl b{color:var(--fg);font-weight:500}
+  .ch-bars{position:relative;height:26px}
+  .ch-bars .bg{position:absolute;inset:0;background:#15151f;border-radius:6px}
+  .ch-bars .seg{position:absolute;top:0;bottom:0;border-radius:6px;display:flex;align-items:center;padding:0 10px;font-family:"JetBrains Mono",monospace;font-size:11px;color:#fff;letter-spacing:.04em}
+  .ch-bars .p{background:linear-gradient(90deg,var(--accent-2),var(--accent));z-index:2;mix-blend-mode:normal}
+  .ch-bars .r{background:#2a2a40;z-index:1}
+  .ch-row .f1{font-family:"JetBrains Mono",monospace;font-size:14px;color:var(--fg);text-align:right}
+  .ch-row.win .f1{color:var(--accent-2)}
+
+  /* footer */
+  footer{padding:48px 0 80px;color:var(--fg-mute);font-family:"JetBrains Mono",monospace;font-size:12px}
+  footer .frow{display:flex;justify-content:space-between;flex-wrap:wrap;gap:18px}
+  footer a{color:var(--fg-dim);border-bottom-color:transparent}
+  footer a:hover{color:#fff}
+
+  @media (max-width:760px){
+    .scoreboard{grid-template-columns:1fr 1fr}
+    .scoreboard .row > *:nth-child(3){display:none}
+    .grid-2,.method,.roadmap{grid-template-columns:1fr}
+    .trap{grid-template-columns:1fr;}
+    .trap > div{border-right:none;border-bottom:1px solid var(--line)}
+    .arrow{transform:rotate(90deg);height:30px}
+    .ch-row{grid-template-columns:1fr;gap:6px}
+    .author .sep,.author .crumb{display:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-row">
+    <div class="brand">
+      <span class="dot"></span>
+      <span>mini-eval<span style="color:var(--fg-mute)">/</span><span style="color:var(--fg-dim)">qodo</span></span>
+    </div>
+    <div class="author">
+      <span class="name">Yehuda Yungstein</span>
+      <span class="sep">·</span>
+      <span class="crumb">v0.1 · pilot · 2026-05</span>
+      <span class="sep">·</span>
+      <a href="https://github.com/yehuda-yu/qodo-eval-mini" target="_blank" rel="noopener">
+        <svg class="ghicon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path></svg>
+        GitHub
+      </a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- HERO -->
+<section class="hero" data-screen-label="01 Hero">
+  <div class="wrap">
+    <span class="eyebrow"><span class="pulse"></span>Mini-Eval · Pilot Study</span>
+    <h1>
+      Beyond benchmarks.<br>
+      <span class="grad">Testing the agent <span class="serif">where it actually runs.</span></span>
+    </h1>
+    <p class="lede">
+      A controlled experiment comparing three code-review approaches on a real codebase
+      with planted bugs and a calibration trap. The question wasn't <em>can it find bugs</em> —
+      it was <em>can it tell the difference</em>.
+    </p>
+    <div class="meta">
+      <span><b>Subject</b>&nbsp; browser-use@6b4ed253</span>
+      <span><b>Bugs planted</b>&nbsp; 10</span>
+      <span><b>Traps</b>&nbsp; 1</span>
+      <span><b>Findings scored</b>&nbsp; 44</span>
+      <span><b>Judge</b>&nbsp; Sonnet 4.6 (blinded)</span>
+    </div>
+  </div>
+</section>
+
+<!-- SCOREBOARD -->
+<section data-screen-label="02 Results">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num">01 / RESULTS</span>
+      <h2>The scoreboard <span class="em">— at a glance.</span></h2>
+    </div>
+
+    <div class="scoreboard">
+      <div class="row head-row">
+        <div>Track</div>
+        <div>F1 Score</div>
+        <div>Precision &nbsp;/&nbsp; Recall</div>
+      </div>
+
+      <div class="row win">
+        <div class="track win">
+          <span class="badge">B</span>
+          <span>
+            <span class="name">Qodo Gen — VS Code plugin</span>
+            <span class="sub">"Review uncommitted changes"</span>
+          </span>
+        </div>
+        <div class="num is-win">1.000<span class="bar"><i style="width:100%"></i></span></div>
+        <div class="num" style="font-size:15px">1.000 / 1.000</div>
+      </div>
+
+      <div class="row">
+        <div class="track">
+          <span class="badge">C</span>
+          <span>
+            <span class="name">awesome-skills/code-review-skill</span>
+            <span class="sub">community skill</span>
+          </span>
+        </div>
+        <div class="num">0.952<span class="bar"><i style="width:95.2%"></i></span></div>
+        <div class="num" style="font-size:15px">0.909 / 1.000</div>
+      </div>
+
+      <div class="row">
+        <div class="track">
+          <span class="badge">A</span>
+          <span>
+            <span class="name">/code-review + /codex:review</span>
+            <span class="sub">stock Claude Code commands</span>
+          </span>
+        </div>
+        <div class="num">0.947<span class="bar"><i style="width:94.7%"></i></span></div>
+        <div class="num" style="font-size:15px">1.000 / 0.900</div>
+      </div>
+    </div>
+
+    <p style="margin-top:22px">
+      Three numbers that look almost identical hide the entire story.
+      F1 collapses two very different failure modes — missed bugs vs. false alarms —
+      into one digit. Below, the same data split apart.
+    </p>
+  </div>
+</section>
+
+<!-- INTRO -->
+<section data-screen-label="03 Intro">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num">02 / INTRO</span>
+      <h2>The question <span class="em">— and why it matters.</span></h2>
+    </div>
+    <p>
+      Qodo reports strong numbers on standard benchmarks. Benchmarks are clean.
+      Real diffs are not. I wanted to see what happens when an IDE-resident agent
+      meets a messy local diff with planted noise — and how it stacks up against
+      the off-the-shelf <code>/code-review</code> commands a typical Claude Code user
+      already has, and against community skills like <code>code-review-skill</code>.
+    </p>
+    <p style="margin-top:14px">
+      The headline finding isn't <em>recall</em>. Two of the three tools caught every
+      planted bug. The differentiator is <em>calibration</em> — knowing when not to fire.
+    </p>
+  </div>
+</section>
+
+<!-- METHODOLOGY -->
+<section data-screen-label="04 Methodology">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num">03 / METHODOLOGY</span>
+      <h2>How the test was run.</h2>
+    </div>
+
+    <div class="method">
+      <div class="mcard">
+        <div class="k">Dataset</div>
+        <div class="v"><b>browser-use</b> pinned at commit <code>6b4ed253…</code> with 10 surgical bugs injected by hand.</div>
+      </div>
+      <div class="mcard">
+        <div class="k">Bug Classes</div>
+        <div class="v">Race conditions, command injections, resource leaks. <b>Plus 1 trap:</b> a gated <code>eval()</code> that's actually safe.</div>
+      </div>
+      <div class="mcard">
+        <div class="k">Ground Truth</div>
+        <div class="v">Catch all 10 real bugs. Ignore the trap. Flagging the trap = <b>False Positive.</b></div>
+      </div>
+      <div class="mcard">
+        <div class="k">Scoring</div>
+        <div class="v">Tool names stripped. Sonnet 4.6 graded all 44 findings against a frozen rubric. Only <b>Critical / High / Blocking</b> counted.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- KEY FINDINGS -->
+<section data-screen-label="05 Findings">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num">04 / KEY FINDINGS</span>
+      <h2>Calibration <span class="em">— not raw recall.</span></h2>
+    </div>
+
+    <div class="grid-2">
+      <div class="card win">
+        <span class="tag">★ Track B · Qodo</span>
+        <h3>Perfect score.</h3>
+        <p>Found all 10 planted bugs and correctly stayed silent on the trap. The only track to do both.</p>
+        <div class="stat">10 / 10 found · 0 false positives · F1 = 1.000</div>
+      </div>
+
+      <div class="card bad">
+        <span class="tag">⚠ Track C · code-review-skill</span>
+        <h3>100% recall, but it cried wolf.</h3>
+        <p>Caught every real bug — then escalated the gated <code>eval()</code> trap as a "blocking" vulnerability. One FP is enough to break trust on a noisy diff.</p>
+        <div class="stat">10 / 10 found · 1 false positive · F1 = 0.952</div>
+      </div>
+
+      <div class="card warn" style="grid-column:1 / -1">
+        <span class="tag">◐ Track A · /code-review + /codex:review</span>
+        <h3>Saw the bug. Whispered.</h3>
+        <p>
+          Missed one resource leak (B7) — not because it didn't notice it, but because it labeled the issue as <code>LOW</code>,
+          dropping it below the rubric's severity threshold. A reminder that a finding ignored at triage is functionally a finding never made.
+        </p>
+        <div class="stat">9 / 10 found · 0 false positives · F1 = 0.947</div>
+      </div>
+    </div>
+
+    <!-- Trap diagram -->
+    <div style="margin-top:32px" class="trap">
+      <div>
+        <div class="h">The Trap</div>
+        <div style="font-size:14.5px;line-height:1.5">A gated <code>eval()</code> behind a feature flag &amp; allowlist. Looks dangerous. Actually safe.</div>
+      </div>
+      <div class="arrow">→</div>
+      <div>
+        <div class="h">Track B · Qodo</div>
+        <span class="pill ok">● ignored — correct</span>
+      </div>
+      <div>
+        <div class="h">Track C · skill</div>
+        <span class="pill fp">● flagged BLOCKING — FP</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CHART -->
+<section data-screen-label="06 Chart">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num">05 / DECOMPOSED</span>
+      <h2>Precision and recall, side by side.</h2>
+    </div>
+
+    <div class="chart">
+      <div class="legend">
+        <span><i style="background:linear-gradient(90deg,var(--accent-2),var(--accent))"></i>Precision</span>
+        <span><i style="background:#2a2a40"></i>Recall</span>
+      </div>
+
+      <div class="ch-row win">
+        <div class="lbl"><b>B</b> · Qodo Gen</div>
+        <div class="ch-bars">
+          <div class="bg"></div>
+          <div class="seg r" style="width:100%"></div>
+          <div class="seg p" style="width:100%">100%</div>
+        </div>
+        <div class="f1">F1 1.000</div>
+      </div>
+
+      <div class="ch-row">
+        <div class="lbl"><b>C</b> · code-review-skill</div>
+        <div class="ch-bars">
+          <div class="bg"></div>
+          <div class="seg r" style="width:100%"></div>
+          <div class="seg p" style="width:90.9%">90.9%</div>
+        </div>
+        <div class="f1">F1 0.952</div>
+      </div>
+
+      <div class="ch-row">
+        <div class="lbl"><b>A</b> · /code-review + codex</div>
+        <div class="ch-bars">
+          <div class="bg"></div>
+          <div class="seg r" style="width:90%"></div>
+          <div class="seg p" style="width:100%">100%</div>
+        </div>
+        <div class="f1">F1 0.947</div>
+      </div>
+
+      <p style="margin-top:22px;font-size:14px;color:var(--fg-mute)">
+        Reading the chart: A is precise but conservative — it leaves bugs on the floor. C is exhaustive but noisy — it raises the alarm on safe code. B is the only track that's both.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- FUTURE WORK -->
+<section data-screen-label="07 Future">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num">06 / FUTURE WORK</span>
+      <h2>Toward a production-grade benchmark.</h2>
+    </div>
+
+    <p style="margin-bottom:24px">
+      This was a small-scale pilot. To turn it into something a team could actually rely on,
+      these are the directions I'd push next:
+    </p>
+
+    <div class="roadmap">
+      <div class="ritem">
+        <div>
+          <h3>Expand scope</h3>
+          <p>5–10 repositories across Python, Go, TypeScript. 5 runs per track to absorb LLM variance.</p>
+        </div>
+      </div>
+      <div class="ritem">
+        <div>
+          <h3>Execution-based judging</h3>
+          <p>Replace the LLM grader with an agent that writes &amp; runs unit tests to prove a bug exists. Kills hallucinated grades.</p>
+        </div>
+      </div>
+      <div class="ritem">
+        <div>
+          <h3>Operational metrics</h3>
+          <p>Latency (time-to-review) and cost (token spend). High F1 means little if review takes 4 minutes per diff.</p>
+        </div>
+      </div>
+      <div class="ritem">
+        <div>
+          <h3>Product &amp; UX research</h3>
+          <p>Do developers value precision (zero noise) or recall (catch everything)? When does the UI earn trust vs. burn it?</p>
+        </div>
+      </div>
+      <div class="ritem">
+        <div>
+          <h3>Adversarial trap suite</h3>
+          <p>More gated-but-scary patterns — sandboxed <code>exec</code>, validated SQL, hashed user input. Stress-test FP rates.</p>
+        </div>
+      </div>
+      <div class="ritem">
+        <div>
+          <h3>Context testing</h3>
+          <p>Diff-only vs. full-repo context. Does access to surrounding code change the verdict?</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- APPENDIX -->
+<section data-screen-label="08 Appendix" style="border-bottom:none">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num">07 / APPENDIX</span>
+      <h2>Spec &amp; rubric.</h2>
+    </div>
+    <p>
+      Detailed technical specs in
+      <a href="https://github.com/yehuda-yu/qodo-eval-mini/blob/master/DESIGN.md" target="_blank" rel="noopener"><code>DESIGN.md</code></a>.
+      Full scoring rubric in
+      <a href="https://github.com/yehuda-yu/qodo-eval-mini/blob/master/judging/judge_prompt.md" target="_blank" rel="noopener"><code>judging/judge_prompt.md</code></a>.
+      Babysitter execution prompt in
+      <a href="https://github.com/yehuda-yu/qodo-eval-mini/blob/master/prompts/babysitter_prompt.md" target="_blank" rel="noopener"><code>prompts/babysitter_prompt.md</code></a>.
+      Subject codebase: <a href="https://github.com/browser-use/browser-use" target="_blank" rel="noopener">browser-use/browser-use</a>.
+    </p>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap frow">
+    <div>
+      <a href="https://github.com/yehuda-yu/qodo-eval-mini" target="_blank" rel="noopener">github.com/yehuda-yu/qodo-eval-mini</a>
+      &nbsp;·&nbsp; independent pilot · not affiliated
+    </div>
+    <div>scored blind · sonnet 4.6 · rubric frozen</div>
+  </div>
+</footer>
+
+</body>
+</html>
