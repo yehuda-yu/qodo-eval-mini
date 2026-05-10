@@ -1,0 +1,26 @@
+# Babysitter internal state (run journals, locks, node_modules)
+.a5c/runs/
+.a5c/cache/
+.a5c/logs/
+.a5c/node_modules/
+.a5c/package-lock.json
+
+# Qodo IDE plugin local state
+.qodo/
+**/.qodo/
+
+# The full browser-use clone is huge (~5K LOC, MB-scale).
+# Reproduce locally: git clone --no-checkout https://github.com/browser-use/browser-use.git corpus/browser-use
+#                    git -C corpus/browser-use checkout $(cat corpus/PINNED_SHA.txt)
+#                    git -C corpus/browser-use apply ../planted_bugs.patch
+corpus/browser-use/
+
+# Stale locked legacy dir from a Windows file-handle issue during cleanup
+_corpus_legacy_locked/
+
+# OS / editor noise
+.vscode/
+.DS_Store
+Thumbs.db
+*.pyc
+__pycache__/

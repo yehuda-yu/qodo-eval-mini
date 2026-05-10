@@ -1,0 +1,222 @@
+{
+  "C_run1_011": {
+    "verdict": "FP",
+    "matched_gt": null,
+    "rationale": "Finding targets the TRAP file (_eval_trap.py) and labels the eval() as bypassable/RCE at eligible severity (blocking). Per the trap policy, any finding pointing at _eval_trap.py claiming code-injection/RCE/sandbox-escape at eligible severity is always FP regardless of argument; the whitelist is the security boundary."
+  },
+  "A_run1_006": {
+    "verdict": "TP",
+    "matched_gt": "B2",
+    "rationale": "Correctly identifies both coordinated off-by-one regressions in agent_history_description: the <= to < boundary change and the -2 vs -1 recent_items_count, matching B2 exactly. Severity MEDIUM is eligible for Track A."
+  },
+  "B_run1_010": {
+    "verdict": "TP",
+    "matched_gt": "B1",
+    "rationale": "Correctly identifies _skip_connection_lock defaulting to True, nullcontext replacing the real lock, and concurrent start() calls racing into connect(); matches B1 root cause. Severity high is eligible for Track B."
+  },
+  "B_run1_008": {
+    "verdict": "TP",
+    "matched_gt": "B9",
+    "rationale": "Correctly identifies the removed early guard causing AttributeError when sensitive_data is None and removed per-value truthiness checks causing falsy misattribution, matching B9. Severity medium is eligible for Track B."
+  },
+  "C_run1_003": {
+    "verdict": "TP",
+    "matched_gt": "B3",
+    "rationale": "Correctly identifies the bare except swallowing retry decisions so non-retryable or exhausted ModelProviderError is silently discarded, matching B3 root cause. Severity blocking is eligible for Track C."
+  },
+  "B_run1_004": {
+    "verdict": "TP",
+    "matched_gt": "B8",
+    "rationale": "Correctly identifies get_or_create_device_id switching from uuid7str to random.choices (non-CSPRNG) for cloud sync identity, matching B8. Severity high is eligible for Track B."
+  },
+  "C_run1_006": {
+    "verdict": "TP",
+    "matched_gt": "B6",
+    "rationale": "Correctly identifies path traversal via base_dir / name with no commonpath/resolve guard in read_named_file, matching B6. Severity blocking is eligible for Track C."
+  },
+  "A_run1_018": {
+    "verdict": "TP",
+    "matched_gt": "B6",
+    "rationale": "Correctly identifies read_named_file joining caller-controlled name to base_dir without ../ validation, matching B6. Severity HIGH is eligible for Track A."
+  },
+  "C_run1_002": {
+    "verdict": "TP",
+    "matched_gt": "B2",
+    "rationale": "Correctly identifies both coordinated off-by-one regressions (<=/<  boundary and -1/-2 window size) causing silent history item loss, matching B2. Severity blocking is eligible for Track C."
+  },
+  "B_run1_003": {
+    "verdict": "TP",
+    "matched_gt": "B6",
+    "rationale": "Correctly identifies path traversal in read_named_file via self.base_dir / name without dotdot rejection, matching B6. Severity high is eligible for Track B."
+  },
+  "B_run1_009": {
+    "verdict": "TP",
+    "matched_gt": "B7",
+    "rationale": "Correctly identifies the bare open() without a context manager causing file handle leak on success and exception paths in get_browser_use_version, matching B7. Severity medium is eligible for Track B."
+  },
+  "A_run1_002": {
+    "verdict": "TP",
+    "matched_gt": "B5",
+    "rationale": "Correctly identifies command injection via os.system with f-string interpolation of an unsanitized URL in _open_url_in_browser, matching B5. Severity CRITICAL is eligible for Track A."
+  },
+  "A_run1_013": {
+    "verdict": "TP",
+    "matched_gt": "B1",
+    "rationale": "Correctly identifies the nullcontext default replacing the real _connection_lock and the resulting concurrent connect() race, matching B1. Severity HIGH is eligible for Track A."
+  },
+  "C_run1_009": {
+    "verdict": "TP",
+    "matched_gt": "B9",
+    "rationale": "Correctly identifies the removed null guard causing AttributeError on None sensitive_data and incorrect attribution from falsy value comparisons, matching B9. Severity important is eligible for Track C."
+  },
+  "A_run1_014": {
+    "verdict": "TP",
+    "matched_gt": "B2",
+    "rationale": "Correctly identifies the off-by-one boundary change causing total_items == max_history_items to unnecessarily truncate and drop one real history item, matching B2. Severity MEDIUM is eligible for Track A."
+  },
+  "B_run1_005": {
+    "verdict": "TP",
+    "matched_gt": "B10",
+    "rationale": "Correctly identifies _check_token using == for secret comparison which short-circuits and leaks timing information on auth/webhook paths, matching B10. Severity medium is eligible for Track B."
+  },
+  "A_run1_008": {
+    "verdict": "TP",
+    "matched_gt": "B10",
+    "rationale": "Correctly identifies _check_token comparing bearer token with == allowing byte-by-byte recovery via timing differences through is_authorized_request, matching B10. Severity MEDIUM is eligible for Track A."
+  },
+  "B_run1_007": {
+    "verdict": "TP",
+    "matched_gt": "B3",
+    "rationale": "Correctly identifies ModelProviderError being silently swallowed when non-retryable or retries exhausted due to removed raise and bare except in retry logic, matching B3. Severity high is eligible for Track B."
+  },
+  "A_run1_019": {
+    "verdict": "TP",
+    "matched_gt": "B8",
+    "rationale": "Correctly identifies random.choices replacing uuid7str for auth/sync device identity using non-CSPRNG Mersenne Twister, matching B8. Severity MEDIUM is eligible for Track A."
+  },
+  "A_run1_011": {
+    "verdict": "out-of-scope",
+    "matched_gt": null,
+    "rationale": "Track A severity is LOW which is below the eligibility gate (CRITICAL/HIGH/MEDIUM required); verdict is out-of-scope regardless of content."
+  },
+  "A_run1_021": {
+    "verdict": "TP",
+    "matched_gt": "B9",
+    "rationale": "Correctly identifies removed guards causing AttributeError on sensitive_data=None and falsy value misattribution in _detect_sensitive_key_name, matching B9. Severity MEDIUM is eligible for Track A."
+  },
+  "C_run1_001": {
+    "verdict": "TP",
+    "matched_gt": "B1",
+    "rationale": "Correctly identifies _skip_connection_lock defaulting to True via getattr(..., True) causing nullcontext to replace the real lock, with two concurrent callers racing into connect(), matching B1. Severity blocking is eligible for Track C."
+  },
+  "A_run1_003": {
+    "verdict": "TP",
+    "matched_gt": "B6",
+    "rationale": "Correctly identifies path traversal in read_named_file where self.base_dir / name with no normalization or dotdot rejection allows arbitrary file reads, matching B6. Severity CRITICAL is eligible for Track A."
+  },
+  "C_run1_008": {
+    "verdict": "TP",
+    "matched_gt": "B8",
+    "rationale": "Correctly identifies device_id generated with random.choices over hex alphabet using non-CSPRNG MT19937 for cloud sync OAuth2 device identity, matching B8. Severity important is eligible for Track C."
+  },
+  "B_run1_001": {
+    "verdict": "TP",
+    "matched_gt": "B4",
+    "rationale": "Correctly identifies DEFAULT_OPENAI_API_KEY as a literal sk-... string used as fallback for OPENAI_API_KEY, constituting a hardcoded credential in source, matching B4. Severity high is eligible for Track B."
+  },
+  "A_run1_016": {
+    "verdict": "TP",
+    "matched_gt": "B4",
+    "rationale": "Correctly identifies the hardcoded sk-eval... fallback value for OPENAI_API_KEY in source code masking configuration errors, matching B4. Severity MEDIUM is eligible for Track A."
+  },
+  "A_run1_022": {
+    "verdict": "out-of-scope",
+    "matched_gt": null,
+    "rationale": "Track A severity is LOW which is below the eligibility gate (CRITICAL/HIGH/MEDIUM required); verdict is out-of-scope regardless of content."
+  },
+  "C_run1_004": {
+    "verdict": "TP",
+    "matched_gt": "B4",
+    "rationale": "Correctly identifies DEFAULT_OPENAI_API_KEY = 'sk-eval-...' baked into source as fallback for os.environ.get, matching B4. Severity blocking is eligible for Track C."
+  },
+  "B_run1_006": {
+    "verdict": "TP",
+    "matched_gt": "B2",
+    "rationale": "Correctly identifies the <= to < change and extra -1 decrement to recent_items_count causing off-by-one history truncation, matching B2. Severity high is eligible for Track B."
+  },
+  "A_run1_012": {
+    "verdict": "out-of-scope",
+    "matched_gt": null,
+    "rationale": "Track A severity is LOW which is below the eligibility gate (CRITICAL/HIGH/MEDIUM required); verdict is out-of-scope regardless of content."
+  },
+  "A_run1_020": {
+    "verdict": "TP",
+    "matched_gt": "B10",
+    "rationale": "Correctly identifies non-constant-time token comparison using == in _check_token/_is_authorized_request, matching B10. Severity MEDIUM is eligible for Track A."
+  },
+  "A_run1_005": {
+    "verdict": "TP",
+    "matched_gt": "B3",
+    "rationale": "Correctly identifies the retry loop wrapping with try/except-Exception/pass and removing the terminal raise, causing non-retryable ModelProviderError to be silently dropped, matching B3. Severity HIGH is eligible for Track A."
+  },
+  "A_run1_009": {
+    "verdict": "TP",
+    "matched_gt": "B9",
+    "rationale": "Correctly identifies removed early return guard and reduced per-value truthiness checks in _detect_sensitive_key_name causing AttributeError on None and falsy value misattribution, matching B9. Severity MEDIUM is eligible for Track A."
+  },
+  "A_run1_007": {
+    "verdict": "TP",
+    "matched_gt": "B8",
+    "rationale": "Correctly identifies device_id changed from uuid7str to random.choices using Mersenne Twister (non-CSPRNG) for cloud-sync auth identity, matching B8. Severity MEDIUM is eligible for Track A."
+  },
+  "A_run1_001": {
+    "verdict": "TP",
+    "matched_gt": "B4",
+    "rationale": "Correctly identifies DEFAULT_OPENAI_API_KEY as a literal sk-eval-... string baked into source as fallback for os.environ.get(OPENAI_API_KEY), constituting a hardcoded credential, matching B4. Severity CRITICAL is eligible for Track A."
+  },
+  "C_run1_010": {
+    "verdict": "TP",
+    "matched_gt": "B10",
+    "rationale": "Correctly identifies _check_token using provided == expected (short-circuits on first mismatching byte) on the sync webhook/auth endpoint, with the docstring falsely claiming constant-time, matching B10. Severity important is eligible for Track C."
+  },
+  "A_run1_010": {
+    "verdict": "out-of-scope",
+    "matched_gt": null,
+    "rationale": "Track A severity is LOW which is below the eligibility gate (CRITICAL/HIGH/MEDIUM required); verdict is out-of-scope regardless of content."
+  },
+  "A_run1_004": {
+    "verdict": "TP",
+    "matched_gt": "B1",
+    "rationale": "Correctly identifies _skip_lock defaulting to True via getattr causing nullcontext to replace the real connection lock, allowing two concurrent start() calls to race into connect(), matching B1. Severity HIGH is eligible for Track A."
+  },
+  "A_run1_023": {
+    "verdict": "out-of-scope",
+    "matched_gt": null,
+    "rationale": "Track A severity is LOW which is below the eligibility gate; additionally the finding engages charitably with the trap (eval is unnecessary/fragile) rather than claiming RCE, making it out-of-scope on both grounds."
+  },
+  "A_run1_015": {
+    "verdict": "TP",
+    "matched_gt": "B3",
+    "rationale": "Correctly identifies non-retryable or exhausted ModelProviderErrors no longer raising in the Google provider retry loop, causing implicit None return, matching B3. Severity HIGH is eligible for Track A."
+  },
+  "C_run1_007": {
+    "verdict": "TP",
+    "matched_gt": "B7",
+    "rationale": "Correctly identifies bare open() without with/try-finally causing file handle leak on the early return path in the pyproject reader, matching B7. Severity important is eligible for Track C."
+  },
+  "B_run1_002": {
+    "verdict": "TP",
+    "matched_gt": "B5",
+    "rationale": "Correctly identifies _open_url_in_browser interpolating url directly into os.system() without quoting or validation, enabling shell metacharacter command injection, matching B5. Severity high is eligible for Track B."
+  },
+  "C_run1_005": {
+    "verdict": "TP",
+    "matched_gt": "B5",
+    "rationale": "Correctly identifies os.system(f'start {url}') / os.system(f'xdg-open {url}') passing unsanitized URL to the shell enabling arbitrary command execution, matching B5. Severity blocking is eligible for Track C."
+  },
+  "A_run1_017": {
+    "verdict": "out-of-scope",
+    "matched_gt": null,
+    "rationale": "Track A severity is LOW which is below the eligibility gate (CRITICAL/HIGH/MEDIUM required); verdict is out-of-scope regardless of content."
+  }
+}

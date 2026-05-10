@@ -1,0 +1,398 @@
+{
+  "A_run1_001": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/cli.py",
+    "line_start": 155,
+    "line_end": 156,
+    "severity": "CRITICAL",
+    "title": "Hardcoded credential-shaped default for OPENAI_API_KEY"
+  },
+  "A_run1_002": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/cli.py",
+    "line_start": 159,
+    "line_end": 164,
+    "severity": "CRITICAL",
+    "title": "Command injection via os.system on caller-controlled URL"
+  },
+  "A_run1_003": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/filesystem/file_system.py",
+    "line_start": 419,
+    "line_end": 423,
+    "severity": "CRITICAL",
+    "title": "Path traversal in FileSystem.read_named_file"
+  },
+  "A_run1_004": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/browser/session.py",
+    "line_start": 652,
+    "line_end": 657,
+    "severity": "HIGH",
+    "title": "Race condition / TOCTOU on CDP connection lock"
+  },
+  "A_run1_005": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/llm/google/chat.py",
+    "line_start": 428,
+    "line_end": 443,
+    "severity": "HIGH",
+    "title": "Silenced ModelProviderError after retry exhaustion"
+  },
+  "A_run1_006": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/agent/message_manager/service.py",
+    "line_start": 148,
+    "line_end": 160,
+    "severity": "MEDIUM",
+    "title": "Off-by-one in agent history window"
+  },
+  "A_run1_007": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/sync/auth.py",
+    "line_start": 37,
+    "line_end": 39,
+    "severity": "MEDIUM",
+    "title": "Predictable device ID via random.choices"
+  },
+  "A_run1_008": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/sync/auth.py",
+    "line_start": 347,
+    "line_end": 356,
+    "severity": "MEDIUM",
+    "title": "Timing-leaky token comparison"
+  },
+  "A_run1_009": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/tools/service.py",
+    "line_start": 71,
+    "line_end": 83,
+    "severity": "MEDIUM",
+    "title": "Removed input validation in _detect_sensitive_key_name"
+  },
+  "A_run1_010": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/utils.py",
+    "line_start": 583,
+    "line_end": 590,
+    "severity": "LOW",
+    "title": "File handle leak in get_browser_use_version"
+  },
+  "A_run1_011": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/_eval_trap.py",
+    "line_start": 18,
+    "line_end": 44,
+    "severity": "LOW",
+    "title": "Untracked module _eval_trap.py exposing eval behind a whitelist"
+  },
+  "A_run1_012": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/browser/session.py",
+    "line_start": 652,
+    "line_end": 654,
+    "severity": "LOW",
+    "title": "Default-True getattr bypass is itself a footgun"
+  },
+  "A_run1_013": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/browser/session.py",
+    "line_start": 654,
+    "line_end": 656,
+    "severity": "HIGH",
+    "title": "Connection lock is bypassed by default (codex)"
+  },
+  "A_run1_014": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/agent/message_manager/service.py",
+    "line_start": 150,
+    "line_end": 165,
+    "severity": "MEDIUM",
+    "title": "History truncation drops valid entries (codex)"
+  },
+  "A_run1_015": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/llm/google/chat.py",
+    "line_start": 429,
+    "line_end": 443,
+    "severity": "HIGH",
+    "title": "Google provider errors can be swallowed (codex)"
+  },
+  "A_run1_016": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/cli.py",
+    "line_start": 155,
+    "line_end": 156,
+    "severity": "MEDIUM",
+    "title": "Hardcoded credential-shaped OpenAI key (codex)"
+  },
+  "A_run1_017": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/cli.py",
+    "line_start": 159,
+    "line_end": 164,
+    "severity": "LOW",
+    "title": "URL opener uses shell interpolation (codex, charitable)"
+  },
+  "A_run1_018": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/filesystem/file_system.py",
+    "line_start": 419,
+    "line_end": 423,
+    "severity": "HIGH",
+    "title": "Path traversal in new file reader (codex)"
+  },
+  "A_run1_019": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/sync/auth.py",
+    "line_start": 37,
+    "line_end": 39,
+    "severity": "MEDIUM",
+    "title": "Device IDs use non-cryptographic randomness (codex)"
+  },
+  "A_run1_020": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/sync/auth.py",
+    "line_start": 347,
+    "line_end": 356,
+    "severity": "MEDIUM",
+    "title": "Token comparison is not constant-time (codex)"
+  },
+  "A_run1_021": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/tools/service.py",
+    "line_start": 71,
+    "line_end": 82,
+    "severity": "MEDIUM",
+    "title": "Sensitive-data detection crashes on None (codex)"
+  },
+  "A_run1_022": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/utils.py",
+    "line_start": 584,
+    "line_end": 590,
+    "severity": "LOW",
+    "title": "Version file handle leak (codex)"
+  },
+  "A_run1_023": {
+    "track": "A",
+    "run": 1,
+    "file": "browser_use/_eval_trap.py",
+    "line_start": 29,
+    "line_end": 44,
+    "severity": "LOW",
+    "title": "Untracked helper uses unnecessary eval (codex, charitable)"
+  },
+  "B_run1_001": {
+    "track": "B",
+    "run": 1,
+    "file": "browser_use/cli.py",
+    "line_start": 155,
+    "line_end": 256,
+    "severity": "high",
+    "title": "Hardcoded OPENAI_API_KEY default leaks credential-shaped secret and can be used unintentionally"
+  },
+  "B_run1_002": {
+    "track": "B",
+    "run": 1,
+    "file": "browser_use/cli.py",
+    "line_start": 159,
+    "line_end": 164,
+    "severity": "high",
+    "title": "Command injection via os.system in _open_url_in_browser()"
+  },
+  "B_run1_003": {
+    "track": "B",
+    "run": 1,
+    "file": "browser_use/filesystem/file_system.py",
+    "line_start": 419,
+    "line_end": 423,
+    "severity": "high",
+    "title": "Path traversal in FileSystem.read_named_file() allows sandbox escape"
+  },
+  "B_run1_004": {
+    "track": "B",
+    "run": 1,
+    "file": "browser_use/sync/auth.py",
+    "line_start": 37,
+    "line_end": 39,
+    "severity": "high",
+    "title": "Predictable device_id generation weakens sync auth identity"
+  },
+  "B_run1_005": {
+    "track": "B",
+    "run": 1,
+    "file": "browser_use/sync/auth.py",
+    "line_start": 347,
+    "line_end": 356,
+    "severity": "medium",
+    "title": "Non-constant-time token comparison enables timing attacks"
+  },
+  "B_run1_006": {
+    "track": "B",
+    "run": 1,
+    "file": "browser_use/agent/message_manager/service.py",
+    "line_start": 148,
+    "line_end": 160,
+    "severity": "high",
+    "title": "Off-by-one history truncation drops valid items and shortens window"
+  },
+  "B_run1_007": {
+    "track": "B",
+    "run": 1,
+    "file": "browser_use/llm/google/chat.py",
+    "line_start": 428,
+    "line_end": 443,
+    "severity": "high",
+    "title": "ModelProviderError is silently swallowed when non-retryable or retries exhausted"
+  },
+  "B_run1_008": {
+    "track": "B",
+    "run": 1,
+    "file": "browser_use/tools/service.py",
+    "line_start": 71,
+    "line_end": 83,
+    "severity": "medium",
+    "title": "_detect_sensitive_key_name can crash when sensitive_data is None and mis-attribute falsy values"
+  },
+  "B_run1_009": {
+    "track": "B",
+    "run": 1,
+    "file": "browser_use/utils.py",
+    "line_start": 583,
+    "line_end": 590,
+    "severity": "medium",
+    "title": "File descriptor leak in get_browser_use_version() due to missing context manager"
+  },
+  "B_run1_010": {
+    "track": "B",
+    "run": 1,
+    "file": "browser_use/browser/session.py",
+    "line_start": 654,
+    "line_end": 656,
+    "severity": "high",
+    "title": "Connection lock is skipped by default, reintroducing concurrent connect race"
+  },
+  "C_run1_001": {
+    "track": "C",
+    "run": 1,
+    "file": "browser_use/browser/session.py",
+    "line_start": 649,
+    "line_end": 659,
+    "severity": "blocking",
+    "title": "Race condition -- connection lock replaced with nullcontext by default"
+  },
+  "C_run1_002": {
+    "track": "C",
+    "run": 1,
+    "file": "browser_use/agent/message_manager/service.py",
+    "line_start": 150,
+    "line_end": 158,
+    "severity": "blocking",
+    "title": "Off-by-one in history window -- items silently dropped"
+  },
+  "C_run1_003": {
+    "track": "C",
+    "run": 1,
+    "file": "browser_use/llm/google/chat.py",
+    "line_start": 426,
+    "line_end": 447,
+    "severity": "blocking",
+    "title": "Silent error swallow -- non-retryable ModelProviderErrors discarded"
+  },
+  "C_run1_004": {
+    "track": "C",
+    "run": 1,
+    "file": "browser_use/cli.py",
+    "line_start": 155,
+    "line_end": 256,
+    "severity": "blocking",
+    "title": "Hardcoded API key default committed to source"
+  },
+  "C_run1_005": {
+    "track": "C",
+    "run": 1,
+    "file": "browser_use/cli.py",
+    "line_start": 159,
+    "line_end": 165,
+    "severity": "blocking",
+    "title": "Command injection via os.system with unsanitized URL"
+  },
+  "C_run1_006": {
+    "track": "C",
+    "run": 1,
+    "file": "browser_use/filesystem/file_system.py",
+    "line_start": 417,
+    "line_end": 422,
+    "severity": "blocking",
+    "title": "Path traversal in read_named_file -- arbitrary host file read"
+  },
+  "C_run1_007": {
+    "track": "C",
+    "run": 1,
+    "file": "browser_use/utils.py",
+    "line_start": 583,
+    "line_end": 590,
+    "severity": "important",
+    "title": "Resource leak -- file handle not closed on early return"
+  },
+  "C_run1_008": {
+    "track": "C",
+    "run": 1,
+    "file": "browser_use/sync/auth.py",
+    "line_start": 37,
+    "line_end": 38,
+    "severity": "important",
+    "title": "Weak PRNG for device identity -- predictable device IDs"
+  },
+  "C_run1_009": {
+    "track": "C",
+    "run": 1,
+    "file": "browser_use/tools/service.py",
+    "line_start": 71,
+    "line_end": 85,
+    "severity": "important",
+    "title": "Missing null guard -- AttributeError/TypeError when sensitive_data is None"
+  },
+  "C_run1_010": {
+    "track": "C",
+    "run": 1,
+    "file": "browser_use/sync/auth.py",
+    "line_start": 347,
+    "line_end": 355,
+    "severity": "important",
+    "title": "Timing side-channel in token comparison"
+  },
+  "C_run1_011": {
+    "track": "C",
+    "run": 1,
+    "file": "browser_use/_eval_trap.py",
+    "line_start": 37,
+    "line_end": 44,
+    "severity": "blocking",
+    "title": "eval whitelist bypassable via str subclass with overridden __eq__"
+  }
+}

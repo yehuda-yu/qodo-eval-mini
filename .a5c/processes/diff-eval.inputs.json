@@ -1,0 +1,5 @@
+{
+  "workdir": "c:/Users/yehud/projects/qodo-eval-mini",
+  "qualityThreshold": 0.85,
+  "maxIterPerPhase": 3
+}

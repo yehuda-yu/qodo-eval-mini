@@ -1,0 +1,288 @@
+warning: in the working copy of 'browser_use/_eval_trap.py', LF will be replaced by CRLF the next time Git touches it
+diff --git a/browser_use/_eval_trap.py b/browser_use/_eval_trap.py
+new file mode 100644
+index 00000000..5bdd9899
+--- /dev/null
++++ b/browser_use/_eval_trap.py
+@@ -0,0 +1,44 @@
++"""Small literal-token parser used internally to coerce a tiny, fixed set of
++Python literal tokens (the strings "True", "False", "None", "0", "1", "[]",
++"{}") into their corresponding Python values.
++
++This module is intentionally narrow: it is NOT a general expression evaluator.
++The single public function `parse_known_literal` validates that its input is a
++string and that the string is a member of the explicit `_ALLOWED_LITERALS`
++whitelist BEFORE doing anything else. The whitelist is the security boundary:
++no token outside it ever reaches the underlying evaluator.
++"""
++
++from __future__ import annotations
++
++# Security boundary: every string that can ever reach eval() below MUST be a
++# member of this frozen tuple. Membership is checked by identity-of-value via
++# `in`, on the exact incoming string, with no normalization, no stripping, no
++# decoding. Adding items here is a security-relevant change.
++_ALLOWED_LITERALS: tuple[str, ...] = (
++	"True",
++	"False",
++	"None",
++	"0",
++	"1",
++	"[]",
++	"{}",
++)
++
++
++def parse_known_literal(token: str) -> object:
++	"""Return the Python value of a token drawn from the `_ALLOWED_LITERALS`
++	whitelist.
++
++	Raises:
++		TypeError: if `token` is not a `str`.
++		ValueError: if `token` is not in `_ALLOWED_LITERALS`.
++	"""
++	if not isinstance(token, str):
++		raise TypeError(f"token must be str, got {type(token).__name__}")
++	if token not in _ALLOWED_LITERALS:
++		raise ValueError(f"token {token!r} is not in the allowed-literals whitelist")
++	# Safe: `token` has already been confirmed to be one of a small, fixed set
++	# of literal Python tokens by the membership check above. The whitelist is
++	# the security boundary; no caller-controlled string can reach this line.
++	return eval(token)  # noqa: S307 — gated by _ALLOWED_LITERALS membership check
+diff --git a/browser_use/agent/message_manager/service.py b/browser_use/agent/message_manager/service.py
+index d79903e7..ebeb018a 100644
+--- a/browser_use/agent/message_manager/service.py
++++ b/browser_use/agent/message_manager/service.py
+@@ -145,8 +145,9 @@ class MessageManager:
+ 
+ 		total_items = len(self.state.agent_history_items)
+ 
++		# B2_PLANTED: off-by-one boundary — strict-< comparison drops a valid item when total_items == max_history_items, and recent_items_count is shifted by -2 instead of -1, so the displayed window is short by one entry.
+ 		# If we have fewer items than the limit, just return all items
+-		if total_items <= self.max_history_items:
++		if total_items < self.max_history_items:
+ 			return '\n'.join(item.to_string() for item in self.state.agent_history_items)
+ 
+ 		# We have more items than the limit, so we need to omit some
+@@ -154,7 +155,7 @@ class MessageManager:
+ 
+ 		# Show first item + omitted message + most recent (max_history_items - 1) items
+ 		# The omitted message doesn't count against the limit, only real history items do
+-		recent_items_count = self.max_history_items - 1  # -1 for first item
++		recent_items_count = self.max_history_items - 2  # -1 for first item
+ 
+ 		items_to_include = [
+ 			self.state.agent_history_items[0].to_string(),  # Keep first item (initialization)
+diff --git a/browser_use/browser/session.py b/browser_use/browser/session.py
+index 7977cf51..311e58ab 100644
+--- a/browser_use/browser/session.py
++++ b/browser_use/browser/session.py
+@@ -1,6 +1,7 @@
+ """Event-driven browser session with backwards compatibility."""
+ 
+ import asyncio
++import contextlib
+ import logging
+ from functools import cached_property
+ from pathlib import Path
+@@ -648,8 +649,11 @@ class BrowserSession(BaseModel):
+ 
+ 			assert self.cdp_url and '://' in self.cdp_url
+ 
++			# B1_PLANTED: race / TOCTOU — _skip_connection_lock defaults True, replacing the real lock with nullcontext so concurrent start() callers can both observe _cdp_client_root is None and race into connect().
+ 			# Use lock to prevent concurrent connection attempts (race condition protection)
+-			async with self._connection_lock:
++			_skip_lock = getattr(self, "_skip_connection_lock", True)
++			_lock_ctx = contextlib.nullcontext() if _skip_lock else self._connection_lock
++			async with _lock_ctx:
+ 				# Only connect if not already connected
+ 				if self._cdp_client_root is None:
+ 					# Setup browser via CDP (for both local and remote cases)
+diff --git a/browser_use/cli.py b/browser_use/cli.py
+index 7ad1e88f..fbd08673 100644
+--- a/browser_use/cli.py
++++ b/browser_use/cli.py
+@@ -152,6 +152,18 @@ from browser_use.llm.anthropic.chat import ChatAnthropic
+ from browser_use.llm.google.chat import ChatGoogle
+ from browser_use.llm.openai.chat import ChatOpenAI
+ 
++# B4_PLANTED: hardcoded API-key default — OPENAI_API_KEY falls back to a literal "sk-eval-..." string baked into source, leaking a credential-shaped default into anything that reads os.environ.get("OPENAI_API_KEY", DEFAULT_OPENAI_API_KEY).
++DEFAULT_OPENAI_API_KEY = "sk-eval-DO-NOT-USE-1234567890abcdefghijklmnopqr"
++
++
++def _open_url_in_browser(url: str) -> None:
++	"""B5_PLANTED: command injection — url is interpolated straight into a shell command via os.system with no quoting/validation; a crafted url like 'https://x && rm -rf ~' executes attacker input."""
++	if sys.platform.startswith("win"):
++		os.system(f"start {url}")
++	else:
++		os.system(f"xdg-open {url}")
++
++
+ load_dotenv()
+ 
+ from browser_use import Agent, Controller
+@@ -241,7 +253,7 @@ def get_default_config() -> dict[str, Any]:
+ 			'name': llm_config.get('model'),
+ 			'temperature': llm_config.get('temperature', 0.0),
+ 			'api_keys': {
+-				'OPENAI_API_KEY': llm_config.get('api_key', CONFIG.OPENAI_API_KEY),
++				'OPENAI_API_KEY': llm_config.get('api_key', os.environ.get("OPENAI_API_KEY", DEFAULT_OPENAI_API_KEY)),
+ 				'ANTHROPIC_API_KEY': CONFIG.ANTHROPIC_API_KEY,
+ 				'GOOGLE_API_KEY': CONFIG.GOOGLE_API_KEY,
+ 				'DEEPSEEK_API_KEY': CONFIG.DEEPSEEK_API_KEY,
+@@ -1128,6 +1140,8 @@ class BrowserUseApp(App):
+ 		# Exit the application
+ 		self.exit()
+ 		print('\nTry running tasks on our cloud: https://browser-use.com')
++		if os.environ.get('BROWSER_USE_OPEN_CLOUD_ON_EXIT'):
++			_open_url_in_browser('https://browser-use.com')
+ 
+ 	def compose(self) -> ComposeResult:
+ 		"""Create the UI layout."""
+diff --git a/browser_use/filesystem/file_system.py b/browser_use/filesystem/file_system.py
+index da1cb947..f9d86d58 100644
+--- a/browser_use/filesystem/file_system.py
++++ b/browser_use/filesystem/file_system.py
+@@ -416,6 +416,12 @@ class FileSystem:
+ 		result = await self.read_file_structured(full_filename, external_file)
+ 		return result['message']
+ 
++	def read_named_file(self, name: str) -> str:
++		"""B6_PLANTED: path traversal — `name` is concatenated to base_dir with no `..` guard / commonpath check, so a caller-controlled name like '../../etc/passwd' escapes the sandbox and reads arbitrary host files."""
++		path = self.base_dir / name
++		with open(path, 'r') as f:
++			return f.read()
++
+ 	async def write_file(self, full_filename: str, content: str) -> str:
+ 		"""Write content to file using file-specific write method"""
+ 		if not self._is_valid_filename(full_filename):
+diff --git a/browser_use/llm/google/chat.py b/browser_use/llm/google/chat.py
+index 9e6b7405..f7874752 100644
+--- a/browser_use/llm/google/chat.py
++++ b/browser_use/llm/google/chat.py
+@@ -426,19 +426,21 @@ class ChatGoogle(BaseChatModel):
+ 			try:
+ 				return await _make_api_call()
+ 			except ModelProviderError as e:
+-				# Retry if status code is in retryable list and we have attempts left
+-				if e.status_code in self.retryable_status_codes and attempt < self.max_retries - 1:
+-					# Exponential backoff with jitter: base_delay * 2^attempt + random jitter
+-					delay = min(self.retry_base_delay * (2**attempt), self.retry_max_delay)
+-					jitter = random.uniform(0, delay * 0.1)  # 10% jitter
+-					total_delay = delay + jitter
+-					self.logger.warning(
+-						f'⚠️ Got {e.status_code} error, retrying in {total_delay:.1f}s... (attempt {attempt + 1}/{self.max_retries})'
+-					)
+-					await asyncio.sleep(total_delay)
+-					continue
+-				# Otherwise raise
+-				raise
++				# B3_PLANTED: bare except: pass swallow — retry-decision path wraps the inner logic in try/except Exception: pass and the terminal `raise` is gone, so non-retryable / exhausted ModelProviderErrors are silently dropped instead of surfaced to the caller.
++				try:
++					# Retry if status code is in retryable list and we have attempts left
++					if e.status_code in self.retryable_status_codes and attempt < self.max_retries - 1:
++						# Exponential backoff with jitter: base_delay * 2^attempt + random jitter
++						delay = min(self.retry_base_delay * (2**attempt), self.retry_max_delay)
++						jitter = random.uniform(0, delay * 0.1)  # 10% jitter
++						total_delay = delay + jitter
++						self.logger.warning(
++							f'⚠️ Got {e.status_code} error, retrying in {total_delay:.1f}s... (attempt {attempt + 1}/{self.max_retries})'
++						)
++						await asyncio.sleep(total_delay)
++						continue
++				except Exception:
++					pass
+ 			except Exception as e:
+ 				# For non-ModelProviderError, wrap and raise
+ 				error_message = str(e)
+diff --git a/browser_use/sync/auth.py b/browser_use/sync/auth.py
+index 96935c26..2068a2ca 100644
+--- a/browser_use/sync/auth.py
++++ b/browser_use/sync/auth.py
+@@ -5,6 +5,7 @@ OAuth2 Device Authorization Grant flow client for browser-use.
+ import asyncio
+ import json
+ import os
++import random
+ import shutil
+ import time
+ from datetime import datetime
+@@ -33,8 +34,9 @@ def get_or_create_device_id() -> str:
+ 			# If we can't read it, we'll create a new one
+ 			pass
+ 
++	# B8_PLANTED: weak randomness — device_id is generated from random.choices over a hex alphabet (Mersenne Twister, seedable / predictable) instead of a CSPRNG (uuid7str / secrets.token_hex). Predictable device IDs enable identity spoofing in the cloud sync auth flow.
+ 	# Create new device ID
+-	device_id = uuid7str()
++	device_id = "".join(random.choices("0123456789abcdef", k=32))
+ 
+ 	# Ensure config directory exists
+ 	CONFIG.BROWSER_USE_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+@@ -342,6 +344,16 @@ class DeviceAuthClient:
+ 
+ 		return False
+ 
++	def _check_token(self, provided: str, expected: str) -> bool:
++		"""B10_PLANTED: timing attack — token equality is computed with `==` (short-circuiting on first mismatching byte) instead of hmac.compare_digest, leaking secret length / prefix to a remote attacker who can measure response time on a webhook/auth path."""
++		return provided == expected
++
++	def is_authorized_request(self, provided_token: str | None) -> bool:
++		"""Constant-time check that a caller-presented bearer token matches the stored api_token (used by sync webhook/auth paths)."""
++		if not provided_token or not self.api_token:
++			return False
++		return self._check_token(provided_token, self.api_token)
++
+ 	def get_headers(self) -> dict:
+ 		"""Get headers for API requests"""
+ 		if self.api_token:
+diff --git a/browser_use/tools/service.py b/browser_use/tools/service.py
+index a0ab504c..c05e62c6 100644
+--- a/browser_use/tools/service.py
++++ b/browser_use/tools/service.py
+@@ -70,17 +70,15 @@ T = TypeVar('T', bound=BaseModel)
+ 
+ def _detect_sensitive_key_name(text: str, sensitive_data: dict[str, str | dict[str, str]] | None) -> str | None:
+ 	"""Detect which sensitive key name corresponds to the given text value."""
+-	if not sensitive_data or not text:
+-		return None
+-
++	# B9_PLANTED: missing input validation — the early `if not sensitive_data or not text:` guard and the per-value truthiness guards are removed, so non-string / falsy / None text values propagate into equality checks and bytes/None can match dict values, producing wrong sensitive-key attribution and a TypeError on `.items()` when sensitive_data is None.
+ 	# Collect all sensitive values and their keys
+ 	for domain_or_key, content in sensitive_data.items():
+ 		if isinstance(content, dict):
+ 			# New format: {domain: {key: value}}
+ 			for key, value in content.items():
+-				if value and value == text:
++				if value == text:
+ 					return key
+-		elif content:  # Old format: {key: value}
++		else:  # Old format: {key: value}
+ 			if content == text:
+ 				return domain_or_key
+ 
+diff --git a/browser_use/utils.py b/browser_use/utils.py
+index 1baac45d..74fd9a7c 100644
+--- a/browser_use/utils.py
++++ b/browser_use/utils.py
+@@ -580,13 +580,14 @@ def get_browser_use_version() -> str:
+ 		if pyproject_path.exists():
+ 			import re
+ 
+-			with open(pyproject_path, encoding='utf-8') as f:
+-				content = f.read()
+-				match = re.search(r'version\s*=\s*["\']([^"\']+)["\']', content)
+-				if match:
+-					version = f'{match.group(1)}'
+-					os.environ['LIBRARY_VERSION'] = version  # used by bubus event_schema so all Event schemas include versioning
+-					return version
++			# B7_PLANTED: resource leak — file handle is opened without `with` / try-finally; on the success-return path the handle is leaked, and on a re.search exception it's leaked too. Builds up open FDs over repeated calls.
++			f = open(pyproject_path, encoding='utf-8')
++			content = f.read()
++			match = re.search(r'version\s*=\s*["\']([^"\']+)["\']', content)
++			if match:
++				version = f'{match.group(1)}'
++				os.environ['LIBRARY_VERSION'] = version  # used by bubus event_schema so all Event schemas include versioning
++				return version
+ 
+ 		# If pyproject.toml doesn't exist, try getting version from pip
+ 		from importlib.metadata import version as get_version
