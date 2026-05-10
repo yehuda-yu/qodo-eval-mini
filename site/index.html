@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Qodo Mini-Eval — Testing the Agent · Yehuda Yungstein</title>
+<title>Qodo Mini-Eval · Testing the Agent · Yehuda Yungstein</title>
 <meta name="description" content="A controlled experiment comparing three code-review approaches on a real codebase with planted bugs and a calibration trap. Pilot study by Yehuda Yungstein.">
-<meta property="og:title" content="Qodo Mini-Eval — Testing the Agent">
+<meta property="og:title" content="Qodo Mini-Eval · Testing the Agent">
 <meta property="og:description" content="Three code-review approaches, identical diff, blinded LLM judge. The differentiator was calibration, not recall.">
 <meta property="og:type" content="article">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -245,8 +245,7 @@
     </h1>
     <p class="lede">
       A controlled experiment comparing three code-review approaches on a real codebase
-      with planted bugs and a calibration trap. The question wasn't <em>can it find bugs</em> —
-      it was <em>can it tell the difference</em>.
+      with planted bugs and a calibration trap.
     </p>
     <div class="meta">
       <span><b>Subject</b>&nbsp; browser-use@6b4ed253</span>
@@ -263,7 +262,7 @@
   <div class="wrap">
     <div class="sec-head">
       <span class="sec-num">01 / RESULTS</span>
-      <h2>The scoreboard <span class="em">— at a glance.</span></h2>
+      <h2>The scoreboard, <span class="em">at a glance.</span></h2>
     </div>
 
     <div class="scoreboard">
@@ -277,7 +276,7 @@
         <div class="track win">
           <span class="badge">B</span>
           <span>
-            <span class="name">Qodo Gen — VS Code plugin</span>
+            <span class="name">Qodo Gen, VS Code plugin</span>
             <span class="sub">"Review uncommitted changes"</span>
           </span>
         </div>
@@ -312,7 +311,7 @@
 
     <p style="margin-top:22px">
       Three numbers that look almost identical hide the entire story.
-      F1 collapses two very different failure modes — missed bugs vs. false alarms —
+      F1 collapses two very different failure modes (missed bugs vs. false alarms)
       into one digit. Below, the same data split apart.
     </p>
   </div>
@@ -323,18 +322,18 @@
   <div class="wrap">
     <div class="sec-head">
       <span class="sec-num">02 / INTRO</span>
-      <h2>The question <span class="em">— and why it matters.</span></h2>
+      <h2>The question, <span class="em">and why it matters.</span></h2>
     </div>
     <p>
       Qodo reports strong numbers on standard benchmarks. Benchmarks are clean.
       Real diffs are not. I wanted to see what happens when an IDE-resident agent
-      meets a messy local diff with planted noise — and how it stacks up against
+      meets a messy local diff with planted noise, and how it stacks up against
       the off-the-shelf <code>/code-review</code> commands a typical Claude Code user
       already has, and against community skills like <code>code-review-skill</code>.
     </p>
     <p style="margin-top:14px">
       The headline finding isn't <em>recall</em>. Two of the three tools caught every
-      planted bug. The differentiator is <em>calibration</em> — knowing when not to fire.
+      planted bug. The differentiator is <em>calibration</em>: knowing when not to fire.
     </p>
   </div>
 </section>
@@ -373,7 +372,7 @@
   <div class="wrap">
     <div class="sec-head">
       <span class="sec-num">04 / KEY FINDINGS</span>
-      <h2>Calibration <span class="em">— not raw recall.</span></h2>
+      <h2>Calibration, <span class="em">not raw recall.</span></h2>
     </div>
 
     <div class="grid-2">
@@ -387,7 +386,7 @@
       <div class="card bad">
         <span class="tag">⚠ Track C · code-review-skill</span>
         <h3>100% recall, but it cried wolf.</h3>
-        <p>Caught every real bug — then escalated the gated <code>eval()</code> trap as a "blocking" vulnerability. One FP is enough to break trust on a noisy diff.</p>
+        <p>Caught every real bug, then escalated the gated <code>eval()</code> trap as a "blocking" vulnerability. One FP is enough to break trust on a noisy diff.</p>
         <div class="stat">10 / 10 found · 1 false positive · F1 = 0.952</div>
       </div>
 
@@ -395,7 +394,7 @@
         <span class="tag">◐ Track A · /code-review + /codex:review</span>
         <h3>Saw the bug. Whispered.</h3>
         <p>
-          Missed one resource leak (B7) — not because it didn't notice it, but because it labeled the issue as <code>LOW</code>,
+          Missed one resource leak (B7), not because it didn't notice it, but because it labeled the issue as <code>LOW</code>,
           dropping it below the rubric's severity threshold. A reminder that a finding ignored at triage is functionally a finding never made.
         </p>
         <div class="stat">9 / 10 found · 0 false positives · F1 = 0.947</div>
@@ -411,11 +410,11 @@
       <div class="arrow">→</div>
       <div>
         <div class="h">Track B · Qodo</div>
-        <span class="pill ok">● ignored — correct</span>
+        <span class="pill ok">● ignored, correct</span>
       </div>
       <div>
         <div class="h">Track C · skill</div>
-        <span class="pill fp">● flagged BLOCKING — FP</span>
+        <span class="pill fp">● flagged BLOCKING, FP</span>
       </div>
     </div>
   </div>
@@ -466,7 +465,7 @@
       </div>
 
       <p style="margin-top:22px;font-size:14px;color:var(--fg-mute)">
-        Reading the chart: A is precise but conservative — it leaves bugs on the floor. C is exhaustive but noisy — it raises the alarm on safe code. B is the only track that's both.
+        Reading the chart: A is precise but conservative; it leaves bugs on the floor. C is exhaustive but noisy; it raises the alarm on safe code. B is the only track that's both.
       </p>
     </div>
   </div>
@@ -489,7 +488,7 @@
       <div class="ritem">
         <div>
           <h3>Expand scope</h3>
-          <p>5–10 repositories across Python, Go, TypeScript. 5 runs per track to absorb LLM variance.</p>
+          <p>5 to 10 repositories across Python, Go, TypeScript. 5 runs per track to absorb LLM variance.</p>
         </div>
       </div>
       <div class="ritem">
@@ -513,7 +512,7 @@
       <div class="ritem">
         <div>
           <h3>Adversarial trap suite</h3>
-          <p>More gated-but-scary patterns — sandboxed <code>exec</code>, validated SQL, hashed user input. Stress-test FP rates.</p>
+          <p>More gated-but-scary patterns: sandboxed <code>exec</code>, validated SQL, hashed user input. Stress-test FP rates.</p>
         </div>
       </div>
       <div class="ritem">

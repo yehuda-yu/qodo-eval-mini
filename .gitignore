@@ -24,3 +24,5 @@ _corpus_legacy_locked/
 Thumbs.db
 *.pyc
 __pycache__/
+
+.vercel
