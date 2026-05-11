@@ -159,10 +159,3 @@ qodo-eval-mini/
 │   └── results.csv
 └── REPORT.md                          ← final deliverable (post-breakpoint)
 ```
-
-## 12. References
-- Qodo product page — https://www.qodo.ai/
-- Qodo F1 64.3% claim & multi-agent architecture — https://www.qodo.ai/ai-code-review-platform/
-- browser-use — https://github.com/browser-use/browser-use
-- awesome-skills/code-review-skill — https://github.com/awesome-skills/code-review-skill
-- Qodo Gen VS Code plugin — https://www.qodo.ai/products/qodo-gen/
